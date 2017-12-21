@@ -1,3 +1,4 @@
+import json
 import socket 
 import threading
 from threading import Thread, Lock 
@@ -33,8 +34,7 @@ class ClientThread(Thread):
 
 	def get_val(self, vars):
 		try:
-			# get a,b --> a:100,b:100
-			vals = [var + ":" + val_store[var] for var in vars]
+			vals = {var : val_store[var] for var in vars}
 		except:
 			self.dbg_print('One of the values not found for: {}'.format(vars))
 			vals = 'None'
@@ -44,7 +44,7 @@ class ClientThread(Thread):
 	def run(self): 
 		self.dbg_print('[+] New server socket thread started for {}:{}'.format(ip, port))
 
-		while True : 
+		while True: 
 			self.dbg_print('Server blocked on recv')
 			req = self.conn.recv(BUFFER_SIZE)
 			req = req[:-1] if req.endswith('\n') else req
@@ -56,22 +56,30 @@ class ClientThread(Thread):
 				self.conn.close()
 				break
 			elif req.startswith('set'):
-				# format: "set var val"
-				items = req.split(' ')
-				if len(items) != 3:
+				# format: set {'args': {var1: val1, var2: val2, ...}}
+				try:
+					json_data = json.loads(req[4:])
+					args = json_data['args']
+					for var in args:
+						self.set_val(var, args[var])
+					resp = 'ok'
+				except ValueError, KeyError:
+					resp = 'error'
 					self.dbg_print('Illegal set command: {}'.format(req))
-				else:
-					self.set_val(items[1], items[2])
+				self.dbg_print('Response: ' + resp)
+				self.conn.send(resp)
 			elif req.startswith('get'):
-				# format: "get var1,var2,...," note: no space between csv
-				items = req.split(' ')
-				if len(items) != 2:
-					self.dbg_print('Illegal get command: {}'.format(req))
-				else:
-					vals = self.get_val(items[1].split(','))
-					print vals
-					resp = 'None' if vals == 'None' else ','.join(vals)
-					self.conn.send(resp)
+				# format: get {'args': [var1, var2, ...]}
+				try:
+					json_data = json.loads(req[4:])
+					vars = json_data['args']
+					vals = self.get_val(vars)
+					resp = 'error' if vals == 'None' else 'ok ' + json.dumps(vals)
+				except ValueError, KeyError:
+					resp = 'error'
+					self.dbg_print('Illegal set command: {}'.format(req))
+				self.dbg_print('Response: ' + resp)
+				self.conn.send(resp)
 			else:
 				self.dbg_print('Received non-supported command: {}'.format(req))
 				
