@@ -1,0 +1,1 @@
+python lag-monitor.py --topic tweets --group_id ExclamationTopology3 --interval_sec 3
