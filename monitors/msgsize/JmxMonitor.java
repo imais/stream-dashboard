@@ -16,15 +16,15 @@ import org.apache.log4j.Logger;
 
 public class JmxMonitor {
     static private String DEFAULT_BEANS_FILE = "./beans";
-    static private int DEFAULT_SAMPLE_INTERVAL_MS = 3000;
+    static private int DEFAULT_SAMPLE_INTERVAL_SEC = 3;
     
     private int pid_;
     private JmxClient client_;
     private ArrayList<String[]> beanAttrList_;
     private long startTime_;
-    private int intervalMillis_;
+    private int intervalSec_;
 
-    public JmxMonitor(String className, String beansFile, int intervalMillis) {
+    public JmxMonitor(String className, String beansFile, int intervalSec) {
         pid_ = getPid(className);
         if (pid_ < 0) {
             System.err.println("pid not found for " + className);
@@ -45,7 +45,7 @@ public class JmxMonitor {
         }
         // for (String[] beanAttr : beanAttrList_)
         //     System.out.println(beanAttr[0] + ", " + beanAttr[1]);
-        intervalMillis_ = intervalMillis;
+        intervalSec_ = intervalSec;
 
         client_ = new JmxClient(pid_);
         startTime_ = System.currentTimeMillis();
@@ -88,7 +88,7 @@ public class JmxMonitor {
                 }
                 str = str.substring(0, str.lastIndexOf(','));
                 System.out.println(str);
-                Thread.sleep(intervalMillis_);
+                Thread.sleep(intervalSec_ * 1000);
             }
 
             // client_.close();
@@ -104,10 +104,10 @@ public class JmxMonitor {
     public static void main(String[] args) {
         String className = null;
         String beansFile = DEFAULT_BEANS_FILE;
-        int intervalMillis = DEFAULT_SAMPLE_INTERVAL_MS;
+        int intervalSec = DEFAULT_SAMPLE_INTERVAL_SEC;
 
         if (args.length < 1 || 3 < args.length) {
-            System.err.println("Usage: java JmxMonitor [monitoring class name] [beans file] [interval (msec)]");
+            System.err.println("Usage: java JmxMonitor [monitoring class name] [beans file] [interval (sec)]");
             System.exit(1);
         }
         if (1 <= args.length)
@@ -115,9 +115,9 @@ public class JmxMonitor {
         if (2 <= args.length)
             beansFile = args[1];
         if (3 <= args.length)
-            intervalMillis = Integer.parseInt(args[2]);
+            intervalSec = Integer.parseInt(args[2]);
 
-        JmxMonitor monitor  = new JmxMonitor(className, beansFile, intervalMillis);
+        JmxMonitor monitor  = new JmxMonitor(className, beansFile, intervalSec);
         monitor.doMonitor();
     }
 }

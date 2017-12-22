@@ -2,7 +2,7 @@
 
 source ../../config
 
-java JmxMonitor kafka.Kafka ./beans 3000 | 
+java JmxMonitor kafka.Kafka ./beans ${MSGSIZE_MONITOR_INTERVAL_SEC} | 
 stdbuf -oL awk -F "\"*, \"*" '{
     printf "set {\"args\": {\"msgsize\": "
     if ($3 > 0.0)
