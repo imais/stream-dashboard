@@ -1,0 +1,12 @@
+#!/bin/bash
+
+source ../../config
+
+java JmxMonitor kafka.Kafka ./beans 3000 | 
+stdbuf -oL awk -F "\"*, \"*" '{
+    printf "set {\"args\": {\"msgsize\": "
+    if ($3 > 0.0)
+        printf "%.3f}}\n", ($2 / $3)
+    else
+        printf "%.3f}}\n", $3
+}' | nc ${METRICS_SERVER_HOST} ${METRICS_SERVER_PORT}
