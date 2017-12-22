@@ -1,5 +1,0 @@
-#!/bin/bash
-
-source ./config
-
-script -c "${TCPDUMP} -i eth0 -Q out -F dst_filter --throughput-tracking=${SAMPLING_INTERVAL_SEC}" | stdbuf -oL \grep "^throughput" | stdbuf -oL sed 's/throughput:/set bytesout/' | stdbuf -oL sed 's/ bytes\/s//' | nc localhost 9999
