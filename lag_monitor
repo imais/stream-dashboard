@@ -1,1 +1,5 @@
-python lag-monitor.py --topic tweets --group_id ExclamationTopology3 --interval_sec 3
+#!/bin/bash
+
+source ./config
+
+script -c "python lag-monitor.py --topic ${TOPIC} --group_id ${GROUP_ID} --interval_sec ${LAG_MONITOR_INTERVAL_SEC}" | stdbuf -oL grep "offsets" | stdbuf -oL sed 's/^{/set {"args": {/' | stdbuf -oL sed 's/]}/]}}/' | nc localhost 9999

@@ -61,9 +61,13 @@ def run_monitor(kafka, zk, interval_sec):
 	while True:
 		tail_offsets = kafka.get_tail_offsets()
 		commited_offsets = zk.get_commited_offsets()
+		partitions = []
 		for p in kafka.partitions.keys():
-			print('Offsets: tail {}, commited {}, lag {}'. \
-				  format(tail_offsets[p], commited_offsets[p], tail_offsets[p] - commited_offsets[p]))
+			partitions.append({'partition_' + str(p) : \
+							   {'tail': tail_offsets[p], 'commited': commited_offsets[p], \
+								'lag': tail_offsets[p] - commited_offsets[p]}})
+		offsets = {'offsets': partitions}
+		print(json.dumps(offsets))
 		time.sleep(interval_sec)
 
 if __name__ == "__main__":
