@@ -60,8 +60,8 @@ class BytesPlot(TimeSeriesPlot):
 
 class LagsPlot(TimeSeriesPlot):
 	request_metrics = ['offsets']
-	plot_metrics = ['lagmax', 'lagmin', 'lagmean']
-	line_colors = {'lagmax': 'lightcoral', 'lagmin': 'plum', 'lagmean': 'palegoldenrod'}
+	plot_metrics = ['max', 'min', 'mean']
+	line_colors = {'max': 'lightcoral', 'min': 'plum', 'mean': 'palegoldenrod'}
 
 	def __init__(self):
 		super(LagsPlot, self).__init__(self.request_metrics, self.plot_metrics, self.line_colors)
@@ -72,7 +72,7 @@ class LagsPlot(TimeSeriesPlot):
 	def update_plot(self, time, display_time, updated_data):
 		partitions = updated_data['offsets']
 		lags = [partitions[p]['lag'] for p in partitions]
-		data = {'lagmax': max(lags), 'lagmin': min(lags), 'lagmean': np.mean(lags)}
+		data = {'max': max(lags), 'min': min(lags), 'mean': np.mean(lags)}
 		for metric in self.plot_metrics:
 			d = [data[metric]]
 			self.data_sources[metric].stream(dict(time=time, display_time=display_time, data=d))
