@@ -36,8 +36,9 @@ class TimeSeriesPlot(object):
 
 	def update_plot(self, time, display_time, updated_data):
 		for metric in self.plot_metrics:
-			data = [float(updated_data[metric])]
-			self.data_sources[metric].stream(dict(time=time, display_time=display_time, data=data))
+			if updated_data[metric] is not None:
+				data = [float(updated_data[metric])]
+				self.data_sources[metric].stream(dict(time=time, display_time=display_time, data=data))
 
 
 class BytesPlot(TimeSeriesPlot):
@@ -54,8 +55,9 @@ class BytesPlot(TimeSeriesPlot):
 
 	def update_plot(self, time, display_time, updated_data):
 		for metric in self.plot_metrics:
-			data = [float(updated_data[metric]) / 1024] # bytes/s -> Kbytes/s
-			self.data_sources[metric].stream(dict(time=time, display_time=display_time, data=data))
+			if updated_data[metric] is not None:
+				data = [float(updated_data[metric]) / 1024] # bytes/s -> Kbytes/s
+				self.data_sources[metric].stream(dict(time=time, display_time=display_time, data=data))
 
 
 class LagsPlot(TimeSeriesPlot):
@@ -70,6 +72,8 @@ class LagsPlot(TimeSeriesPlot):
 		return super(LagsPlot, self).create_plot('Offset Lags', 600, 250, yaxis_label='Offset Lags')
 
 	def update_plot(self, time, display_time, updated_data):
+		if updated_data['offsets'] is None:
+			return
 		partitions = updated_data['offsets']
 		lags = [partitions[p]['lag'] for p in partitions]
 		data = {'max': max(lags), 'min': min(lags), 'mean': np.mean(lags)}

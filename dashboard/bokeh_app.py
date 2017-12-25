@@ -31,9 +31,7 @@ def update_plots():
 	print resp
 	resp = resp[-1] if resp.endswith('\n') else resp
 
-	if resp == 'None':
-		print 'No data returned to request: {}'.format(req)
-	elif resp.startswith('ok'):
+	if resp.startswith('ok'):
 		data = json.loads(resp[3:])
 		for plot in plots:
 			plot.update_plot(time, display_time, data)

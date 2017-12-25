@@ -33,14 +33,11 @@ class ClientThread(Thread):
 			store_lock.release()
 
 	def get_val(self, vars):
-		try:
-			vals = {var : val_store[var] for var in vars}
-		except:
-			self.dbg_print('One of the values not found for: {}'.format(vars))
-			vals = 'None'
-		finally:
-			return vals
-		
+		vals = {}
+		for var in vars:
+			vals[var] = val_store[var] if var in val_store else None
+		return vals
+
 	def run(self): 
 		self.dbg_print('[+] New server socket thread started for {}:{}'.format(ip, port))
 
