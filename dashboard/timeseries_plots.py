@@ -75,7 +75,7 @@ class LagsPlot(TimeSeriesPlot):
 		if updated_data['offsets'] is None:
 			return
 		partitions = updated_data['offsets']
-		lags = [partitions[p]['lag'] for p in partitions]
+		lags = [p.values()[0]['lag'] for p in partitions]
 		data = {'max': max(lags), 'min': min(lags), 'mean': np.mean(lags)}
 		for metric in self.plot_metrics:
 			d = [data[metric]]
