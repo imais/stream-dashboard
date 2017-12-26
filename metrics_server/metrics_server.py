@@ -6,7 +6,7 @@ from threading import Thread, Lock
 # Constants
 TCP_IP = '0.0.0.0' 
 TCP_PORT = 9999
-BUFFER_SIZE = 256
+BUFFER_SIZE = 8192
 
 # Global variables
 val_store = {}

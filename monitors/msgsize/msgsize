@@ -5,8 +5,8 @@ source ../../config
 java JmxMonitor kafka.Kafka ./beans ${MSGSIZE_MONITOR_INTERVAL_SEC} | 
 stdbuf -oL awk -F "\"*, \"*" '{
     printf "set {\"args\": {\"msgsize\": "
-    if ($3 > 0.0)
-        printf "%.3f}}\n", ($2 / $3)
+    if ($2 > 0.0)
+        printf "%.3f}}\n", ($3 / $2)
     else
-        printf "%.3f}}\n", $3
+        printf "%.3f}}\n", $2
 }' | nc ${METRICS_SERVER_HOST} ${METRICS_SERVER_PORT} > nc.log
