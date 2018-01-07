@@ -3,15 +3,14 @@ import random
 import socket
 from datetime import datetime
 from bokeh.layouts import column
-from bokeh.models import ColumnDataSource, HoverTool, SaveTool
 from bokeh.plotting import curdoc, figure
-from timeseries_plots import BytesPlot, LagsPlot, MsgsizePlot
+from timeseries_plots import BytesPlot, VmPlot, LagsPlot, MsgsizePlot
 
 METRICS_SERVER_IP = 'localhost'
 METRICS_SERVER_PORT = 9999
 BUFFER_SIZE = 1024
 UPDATE_INTERVAL_MSEC = 3000
-REQUEST_METRICS = ['bytesout', 'bytesin', 'offsets', 'bytesout_minavg', 'bytesin_minavg', 'msgsin_minavg']
+REQUEST_METRICS = ['bytesout', 'bytesin', 'offsets', 'bytesout_minavg', 'bytesin_minavg', 'msgsin_minavg', 'vm']
 
 
 def connect(ip, port):
@@ -38,7 +37,7 @@ def update_plots():
 			plot.update_plot(time, display_time, data)
 
 sock = connect(METRICS_SERVER_IP, METRICS_SERVER_PORT)
-plots = [BytesPlot(), LagsPlot(), MsgsizePlot()]
+plots = [BytesPlot(), LagsPlot(), VmPlot(), MsgsizePlot()]
 column_plots = [plot.create_plot() for plot in plots]
 
 curdoc().add_root(column(column_plots))
