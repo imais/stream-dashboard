@@ -9,7 +9,7 @@ class TimeSeriesPlot(object):
 	hover = HoverTool(tooltips=[("Time", "@display_time"), ("Data", "@data")])
 	x_range = None
 	default_width  = 650
-	default_height = 220
+	default_height = 200
 
 	def __init__(self, metrics, line_colors, line_dashes=None):
 		self.metrics = metrics
@@ -121,6 +121,9 @@ class MsgsizePlot(TimeSeriesPlot):
 													yaxis_label='Average Message Size [bytes]')
 
 	def update_plot(self, time, display_time, updated_data):
+		if updated_data['bytesin_minavg'] is None or updated_data['msgsin_minavg'] is None:
+			return
+
 		if 0.0 < updated_data['msgsin_minavg']:
 			data = {'msgsize': updated_data['bytesin_minavg'] / updated_data['msgsin_minavg']}
 		else:
