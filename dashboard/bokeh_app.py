@@ -10,7 +10,7 @@ METRICS_SERVER_IP = 'localhost'
 METRICS_SERVER_PORT = 9999
 BUFFER_SIZE = 1024
 UPDATE_INTERVAL_MSEC = 3000
-REQUEST_METRICS = ['bytesout', 'bytesin', 'offsets', 'bytesout_minavg', 'bytesin_minavg', 'msgsin_minavg', 'vm']
+REQUEST_METRICS = ['bytesout', 'bytesin', 'offsets', 'bytesout_1minavg', 'bytesin_1minavg', 'msgsin_1minavg', 'vm']
 
 
 def connect(ip, port):

@@ -58,9 +58,9 @@ class TimeSeriesPlot(object):
 
 
 class BytesPlot(TimeSeriesPlot):
-	metrics = ['bytesout', 'bytesin', 'bytesout_minavg', 'bytesin_minavg']
-	line_colors = {'bytesout': 'dodgerblue', 'bytesin': 'mediumseagreen', 'bytesout_minavg': 'lightskyblue', 'bytesin_minavg': 'mediumaquamarine'}
-	line_dashes = {'bytesout': 'solid', 'bytesin': 'solid', 'bytesout_minavg': 'dashed', 'bytesin_minavg': 'dashed'}
+	metrics = ['bytesout', 'bytesin', 'bytesout_1minavg', 'bytesin_1minavg']
+	line_colors = {'bytesout': 'dodgerblue', 'bytesin': 'mediumseagreen', 'bytesout_1minavg': 'lightskyblue', 'bytesin_1minavg': 'mediumaquamarine'}
+	line_dashes = {'bytesout': 'solid', 'bytesin': 'solid', 'bytesout_1minavg': 'dashed', 'bytesin_1minavg': 'dashed'}
 
 	def __init__(self):
 		super(BytesPlot, self).__init__(self.metrics, self.line_colors, self.line_dashes)
@@ -121,11 +121,11 @@ class MsgsizePlot(TimeSeriesPlot):
 													yaxis_label='Average Message Size [bytes]')
 
 	def update_plot(self, time, display_time, updated_data):
-		if updated_data['bytesin_minavg'] is None or updated_data['msgsin_minavg'] is None:
+		if updated_data['bytesin_1minavg'] is None or updated_data['msgsin_1minavg'] is None:
 			return
 
-		if 0.0 < updated_data['msgsin_minavg']:
-			data = {'msgsize': updated_data['bytesin_minavg'] / updated_data['msgsin_minavg']}
+		if 0.0 < updated_data['msgsin_1minavg']:
+			data = {'msgsize': updated_data['bytesin_1minavg'] / updated_data['msgsin_1minavg']}
 		else:
 			data = {'msgsize': 0.0}
 		super(MsgsizePlot, self).update_plot(time, display_time, data)

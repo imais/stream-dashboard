@@ -18,14 +18,8 @@ if [[ ! -z ${pid_offsets} ]] ; then
     echo "Started offsets monitor (PID:${pid_offsets::-1})"
 fi
 
-cd ./monitors/minavg/; ./minavg & cd ../../
-pid_minavg=`pgrep minavg`
-if [[ ! -z ${pid_minavg} ]] ; then
-    echo "Started minavg monitor (PID:${pid_minavg::-1})"
+cd ./monitors/jmx/; ./jmx & cd ../../
+pid_jmx=`pgrep jmx`
+if [[ ! -z ${pid_jmx} ]] ; then
+    echo "Started jmx monitor (PID:${pid_jmx::-1})"
 fi
-
-
-
-
-
-
