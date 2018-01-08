@@ -1,0 +1,5 @@
+source ./testlib
+rm ./topo
+kill_supervisors
+sleep_sec 20
+run_supervisors 1
