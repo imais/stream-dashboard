@@ -27,7 +27,7 @@ class PerSecPartitionsDerivedValue(object):
 		# partitions = {"partition_0": {"tail": 1435, "lag": 48, "commited": 1387}, 
 		#               "partition_1": {"tail": 1429, "lag": 0, "commited": 1429}, ...}
 
-		empty_result = (self.var, {self.var: 0.0, self.var + '_onemin': 0.0})
+		empty_result = (self.var, {self.var: 0.0, self.var + '_1min': 0.0})
 
 		if partitions is None or partitions == {}:
 			return empty_result
@@ -48,9 +48,9 @@ class PerSecPartitionsDerivedValue(object):
 		self.last_val = val
 		self.last_time = now
 		self.add_history(now, delta_val)
-		onemin_rate = self.compute_one_minute_rate()
+		min_rate = self.compute_one_minute_rate()
 
-		return (self.var, {self.var: rate, self.var + '_onemin': onemin_rate})
+		return (self.var, {self.var: rate, self.var + '_1min': min_rate})
 
 
 class MsgsIn(PerSecPartitionsDerivedValue):

@@ -12,8 +12,8 @@ BUFFER_SIZE = 1024
 UPDATE_INTERVAL_MSEC = 3000
 REQUEST_METRICS = ['msgsin', 'msgsout', 'lags', 'vm']
 # REQUEST_METRICS = ['bytesout', 'bytesin', 'offsets', 'bytesout_1minavg', 'bytesin_1minavg', 'msgsin_1minavg', 'vm']
-PLOTS = [MsgsPlot()]
-# PLOTS = [BytesPlot(), LagsPlot(), VmPlot(), MsgsizePlot()]
+# PLOTS = [MsgsPlot(), LagsPlot(), VmPlot(), MsgsizePlot()]
+PLOTS = [MsgsPlot(), LagsPlot()]
 
 
 def connect(ip, port):
