@@ -10,6 +10,7 @@ class TimeSeriesPlot(object):
 	x_range = None
 	default_width  = 650
 	default_height = 200
+	default_line_width = 2
 
 	def __init__(self, metrics, line_colors, line_dashes=None):
 		self.metrics = metrics
@@ -18,7 +19,7 @@ class TimeSeriesPlot(object):
 		self.data_sources = {}
 
 	def create_plot(self, title, width=default_width, height=default_height, 
-					xaxis_label='Time', yaxis_label='Data', line_width=3):
+					xaxis_label='Time', yaxis_label='Data', line_width=default_line_width):
 		if TimeSeriesPlot.x_range is None:
 			p = figure(plot_width=width, plot_height=height, x_axis_type='datetime', tools=self.tools, 
 					   toolbar_location='above', title=title)
