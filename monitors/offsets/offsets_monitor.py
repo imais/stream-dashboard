@@ -1,5 +1,6 @@
-import argparse
+>import argparse
 import json
+import sys
 import time
 from kazoo.client import KazooClient
 from kazoo.client import KazooState
@@ -18,7 +19,11 @@ class KafkaClient(object):
 	def __init__(self, kafka_host, topic, group_id):
 		self.client = SimpleClient(kafka_host)
 		self.topic = topic
-		self.partitions = self.client.topic_partitions[topic]
+		try:
+			self.partitions = self.client.topic_partitions[topic]
+		except KeyError as ex:
+			print('KeyError: {}'.format(ex))
+			self.partitions = None
 		self.group_id = group_id
 
 	def close(self):
@@ -61,12 +66,12 @@ def run_monitor(kafka, zk, interval_sec):
 	while True:
 		tail_offsets = kafka.get_tail_offsets()
 		commited_offsets = zk.get_commited_offsets()
-		partitions = []
+		partitions = {}
 		for p in kafka.partitions.keys():
 			if p in commited_offsets:
-				partitions.append({'partition_' + str(p) : \
-								   {'tail': tail_offsets[p], 'commited': commited_offsets[p], \
-									'lag': tail_offsets[p] - commited_offsets[p]}})
+				partitions['partition_' + str(p)] = {'tail': tail_offsets[p], 
+													 'commited': commited_offsets[p],
+													 'lag': tail_offsets[p] - commited_offsets[p]}
 		offsets = {'offsets': partitions}
 		print(json.dumps(offsets))
 		time.sleep(interval_sec)
@@ -82,6 +87,8 @@ if __name__ == "__main__":
 	print('Arguments: {}'.format(vars(args)))
 
 	kafka = KafkaClient(args.kafka_host, args.topic, args.group_id)
+	if kafka.partitions is None:
+		sys.exit('Partitions for requested topic \'{}\' do not exist'.format(args.topic))
 	zk = ZkClient(args.zk_host, args.topic, kafka.partitions, args.group_id)
 
 	# infinite loop
