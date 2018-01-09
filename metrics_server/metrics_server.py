@@ -14,7 +14,6 @@ val_store = {}
 store_lock = Lock()
 threads = [] 
 derived_values = {'offsets': [MsgsIn(), MsgsOut(), OffsetLags()]}
-# derived_values = {'offsets': [OffsetLags()]}
 
 class ClientThread(Thread): 
 	def __init__(self, ip, port, conn): 

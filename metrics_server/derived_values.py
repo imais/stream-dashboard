@@ -10,24 +10,24 @@ class PerSecPartitionsDerivedValue(object):
 		self.last_val = None
 		self.history = []
 
-	def add_history(self, time, data):
-		self.history.append((time, data))
+	def add_history(self, time, delta):
+		self.history.append((time, delta))
 
-	def compute_1minavg(self):
-		# Remove data older than one minute and compute mean
+	def compute_one_minute_rate(self):
+		# Compute one-minute rate
 		now = datetime.now()
-		self.history[:] = [(time, data) for (time, data) in self.history 
+		self.history[:] = [(time, delta) for (time, delta) in self.history 
 						   if (now - time).total_seconds() <= 60.0]
 		# print('### history={}'.format(self.history))
-		latest_data = [data for (time, data) in self.history]
-		# print('### lastest_data={}'.format(latest_data))
-		return np.mean(latest_data)
+		total_delta = sum([delta for (time, delta) in self.history])
+		# print('### total_delta={}'.format(total_delta))
+		return (float)(total_delta) / 60.0
 
 	def compute(self, partitions):
 		# partitions = {"partition_0": {"tail": 1435, "lag": 48, "commited": 1387}, 
 		#               "partition_1": {"tail": 1429, "lag": 0, "commited": 1429}, ...}
 
-		empty_result = (self.var, {'persec': 0.0, 'persec_1minavg': 0.0})
+		empty_result = (self.var, {self.var + '_latest': 0.0, self.var + '_onemin': 0.0})
 
 		if partitions is None or partitions == {}:
 			return empty_result
@@ -41,15 +41,16 @@ class PerSecPartitionsDerivedValue(object):
 			return empty_result
 
 		# Compute per-second change per time
-		persec = float(val - self.last_val) / (now - self.last_time).total_seconds()
-		# print("#### last_val={}, val={}, delta_sec={}".
-		# 	  format(self.last_val, val, (now - self.last_time).total_seconds()))
+		delta_val = val - self.last_val
+		rate = delta_val / (now - self.last_time).total_seconds()
+		# print("#### last_val={}, val={}, delta_val={}, delta_sec={}".
+		# 	  format(self.last_val, val, delta_val, (now - self.last_time).total_seconds()))
 		self.last_val = val
 		self.last_time = now
-		self.add_history(now, persec)
-		persec_1minavg = self.compute_1minavg()
+		self.add_history(now, delta_val)
+		onemin_rate = self.compute_one_minute_rate()
 
-		return (self.var, {'persec': persec, 'persec_1minavg': persec_1minavg})
+		return (self.var, {self.var + '_latest': rate, self.var + '_onemin': onemin_rate})
 
 
 class MsgsIn(PerSecPartitionsDerivedValue):
