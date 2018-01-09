@@ -11,6 +11,7 @@ class TimeSeriesPlot(object):
 	default_width  = 650
 	default_height = 200
 	default_line_width = 2
+	default_muted_alpha = 0.1
 
 	def __init__(self, metrics, line_colors, line_dashes=None):
 		self.metrics = metrics
@@ -32,9 +33,9 @@ class TimeSeriesPlot(object):
 		for metric in self.metrics:
 			self.data_sources[metric] = ColumnDataSource(dict(time=[], display_time=[], data=[]))
 			if self.line_dashes is not None:
-				r = p.line(source=self.data_sources[metric], x='time', y='data', color=self.line_colors[metric], line_dash=self.line_dashes[metric], line_width=3, muted_color=self.line_colors[metric], muted_alpha=0.2)
+				r = p.line(source=self.data_sources[metric], x='time', y='data', color=self.line_colors[metric], line_dash=self.line_dashes[metric], line_width=self.default_line_width, muted_color=self.line_colors[metric], muted_alpha=self.default_muted_alpha)
 			else:
-				r = p.line(source=self.data_sources[metric], x='time', y='data', color=self.line_colors[metric], line_width=3, muted_color=self.line_colors[metric], muted_alpha=0.2)
+				r = p.line(source=self.data_sources[metric], x='time', y='data', color=self.line_colors[metric], line_width=self.default_line_width, muted_color=self.line_colors[metric], muted_alpha=self.default_muted_alpha)
 			if 1 < len(self.metrics):
 				legend_items.append((metric, [r]))
 		legend = Legend(items=legend_items, click_policy='mute')
@@ -43,9 +44,6 @@ class TimeSeriesPlot(object):
 		p.xaxis.axis_label = xaxis_label
 		p.yaxis.axis_label = yaxis_label
 		p.add_layout(legend, 'right')
-		# p.legend.location = 'top_left'
-		# p.legend.click_policy = 'mute'
-		# p.legend.label_text_font_size = '8pt'
 		p.add_tools(self.hover)
 
 		self.p = p
@@ -58,6 +56,40 @@ class TimeSeriesPlot(object):
 				self.data_sources[metric].stream(dict(time=time, display_time=display_time, data=data))
 
 
+class MsgsPlot(TimeSeriesPlot):
+	metrics_msgsin = ['msgsin', 'msgsin_onemin']
+	metrics_msgsout = ['msgsout', 'msgsout_onemin']
+	metrics_delta = ['delta']
+	line_colors = {'msgsin': 'mediumseagreen', 'msgsin_onemin': 'mediumaquamarine',
+				   'msgsout': 'dodgerblue', 'msgsout_onemin': 'lightskyblue', 'delta': 'palevioletred'}
+	line_dashes = {'msgsin': 'solid', 'msgsin_onemin': 'dashed',
+				   'msgsout': 'solid', 'msgsout_onemin': 'dashed', 'delta': 'solid'}
+
+	def __init__(self):
+		super(MsgsPlot, self).__init__(self.metrics_msgsin + self.metrics_msgsout,
+									   self.line_colors, self.line_dashes)
+
+	def create_plot(self):
+		return super(MsgsPlot, self).create_plot('MessagesIn/MessagesOut',
+												  yaxis_label='Messages per Second')
+
+	def update_plot(self, time, display_time, updated_data):
+		if updated_data['msgsin'] is not None:
+			for metric in self.metrics_msgsin:
+				data = [updated_data['msgsin'][metric]]
+				self.data_sources[metric].stream(dict(time=time, display_time=display_time, data=data))
+
+		if updated_data['msgsout'] is not None:
+			for metric in self.metrics_msgsout:
+				data = [updated_data['msgsout'][metric]]
+				self.data_sources[metric].stream(dict(time=time, display_time=display_time, data=data))
+
+		# if updated_data['msgsin'] is not None and updated_data['msgsout'] is not None:
+		# 	data = [updated_data['msgsin']['msgsin'] - updated_data['msgsout']['msgsout']]
+		# 	self.data_sources['delta'].stream(dict(time=time, display_time=display_time, data=data))
+
+
+
 class BytesPlot(TimeSeriesPlot):
 	metrics = ['bytesout', 'bytesin', 'bytesout_1minavg', 'bytesin_1minavg']
 	line_colors = {'bytesout': 'dodgerblue', 'bytesin': 'mediumseagreen', 'bytesout_1minavg': 'lightskyblue', 'bytesin_1minavg': 'mediumaquamarine'}
@@ -67,7 +99,7 @@ class BytesPlot(TimeSeriesPlot):
 		super(BytesPlot, self).__init__(self.metrics, self.line_colors, self.line_dashes)
 
 	def create_plot(self):
-		return super(BytesPlot, self).create_plot('BytesOut/BytesIn',
+		return super(BytesPlot, self).create_plot('BytesInPerSec/BytesOutPerSec',
 												  yaxis_label='Data Rate [Kbytes/sec]')
 
 	def update_plot(self, time, display_time, updated_data):

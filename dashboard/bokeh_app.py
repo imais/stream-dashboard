@@ -4,13 +4,16 @@ import socket
 from datetime import datetime
 from bokeh.layouts import column
 from bokeh.plotting import curdoc, figure
-from timeseries_plots import BytesPlot, VmPlot, LagsPlot, MsgsizePlot
+from timeseries_plots import MsgsPlot, BytesPlot, VmPlot, LagsPlot, MsgsizePlot
 
 METRICS_SERVER_IP = 'localhost'
 METRICS_SERVER_PORT = 9999
 BUFFER_SIZE = 1024
 UPDATE_INTERVAL_MSEC = 3000
-REQUEST_METRICS = ['bytesout', 'bytesin', 'offsets', 'bytesout_1minavg', 'bytesin_1minavg', 'msgsin_1minavg', 'vm']
+REQUEST_METRICS = ['msgsin', 'msgsout', 'lags', 'vm']
+# REQUEST_METRICS = ['bytesout', 'bytesin', 'offsets', 'bytesout_1minavg', 'bytesin_1minavg', 'msgsin_1minavg', 'vm']
+PLOTS = [MsgsPlot()]
+# PLOTS = [BytesPlot(), LagsPlot(), VmPlot(), MsgsizePlot()]
 
 
 def connect(ip, port):
@@ -33,12 +36,11 @@ def update_plots():
 
 	if resp.startswith('ok'):
 		data = json.loads(resp[3:])
-		for plot in plots:
+		for plot in PLOTS:
 			plot.update_plot(time, display_time, data)
 
 sock = connect(METRICS_SERVER_IP, METRICS_SERVER_PORT)
-plots = [BytesPlot(), LagsPlot(), VmPlot(), MsgsizePlot()]
-column_plots = [plot.create_plot() for plot in plots]
+column_plots = [plot.create_plot() for plot in PLOTS]
 
 curdoc().add_root(column(column_plots))
 curdoc().add_periodic_callback(update_plots, UPDATE_INTERVAL_MSEC)
