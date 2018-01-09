@@ -11,7 +11,7 @@ class TimeSeriesPlot(object):
 	default_width  = 650
 	default_height = 200
 	default_line_width = 2
-	default_muted_alpha = 0.1
+	default_muted_alpha = 0.2
 
 	def __init__(self, metrics, line_colors, line_dashes=None):
 		self.metrics = metrics
@@ -59,8 +59,8 @@ class TimeSeriesPlot(object):
 class MsgsPlot(TimeSeriesPlot):
 	sources = ['msgsin', 'msgsout']
 	display_metrics = {'msgsin': ['msgsin', 'msgsin_1min'], 'msgsout': ['msgsout', 'msgsout_1min']}
-	line_colors = {'msgsin': 'mediumseagreen', 'msgsin_1min': 'mediumaquamarine',
-				   'msgsout': 'dodgerblue', 'msgsout_1min': 'lightskyblue', 'delta': 'palevioletred'}
+	line_colors = {'msgsin': 'mediumaquamarine', 'msgsin_1min': 'mediumseagreen',
+				   'msgsout': 'lightskyblue', 'msgsout_1min': 'dodgerblue', 'delta': 'palevioletred'}
 	line_dashes = {'msgsin': 'solid', 'msgsin_1min': 'dashed',
 				   'msgsout': 'solid', 'msgsout_1min': 'dashed', 'delta': 'solid'}
 
@@ -103,7 +103,7 @@ class BytesPlot(TimeSeriesPlot):
 class LagsPlot(TimeSeriesPlot):
 	source = 'lags'
 	display_metrics = ['max', 'min', 'mean']
-	line_colors = {'max': 'lightcoral', 'min': 'plum', 'mean': 'palegoldenrod'}
+	line_colors = {'max': 'plum', 'min': 'palegoldenrod', 'mean': 'lightcoral'}
 
 	def __init__(self):
 		super(LagsPlot, self).__init__(self.display_metrics, self.line_colors)
@@ -135,6 +135,7 @@ class VmPlot(TimeSeriesPlot):
 
 
 class MsgsizePlot(TimeSeriesPlot):
+	source = 'jmx'
 	display_metrics = ['msgsize']
 	line_colors = {'msgsize': 'skyblue'}
 
@@ -146,11 +147,12 @@ class MsgsizePlot(TimeSeriesPlot):
 													yaxis_label='Average Message Size [bytes]')
 
 	def update_plot(self, time, display_time, updated_data):
-		if updated_data['bytesin_1minavg'] is None or updated_data['msgsin_1minavg'] is None:
+		if updated_data[self.source] is None or updated_data[self.source] == {}:
 			return
 
-		if 0.0 < updated_data['msgsin_1minavg']:
-			data = {'msgsize': updated_data['bytesin_1minavg'] / updated_data['msgsin_1minavg']}
+		if 0.0 < updated_data[self.source]['msgsin_1min']:
+			data = {'msgsize': 
+					updated_data[self.source]['bytesin_1min'] / updated_data[self.source]['msgsin_1min']}
 		else:
 			data = {'msgsize': 0.0}
 		super(MsgsizePlot, self).update_plot(time, display_time, data)
