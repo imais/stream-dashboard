@@ -75,24 +75,3 @@ class OffsetLags(object):
 		stats = {'max': max(lags), 'min': min(lags), 'mean': np.mean(lags), 'num': len(partitions)}
 
 		return ('lags', stats)
-
-
-class BytesDerivedValue(OneMinuteRate):
-	def __init__(self, var):
-		super(BytesDerivedValue, self).__init__()
-		self.var = var
-
-	def compute(self, val):
-		self.add_history(datetime.now(), val)
-		min_rate = self.compute_one_minute_rate()
-		return (self.var, {self.var: val, self.var + '_1min': min_rate})
-
-
-class BytesIn(BytesDerivedValue):
-	def __init__(self):
-		super(BytesIn, self).__init__('bytesin')
-
-
-class BytesOut(BytesDerivedValue):
-	def __init__(self):
-		super(BytesOut, self).__init__('bytesout')

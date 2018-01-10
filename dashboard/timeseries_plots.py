@@ -9,12 +9,14 @@ class TimeSeriesPlot(object):
 	hover = HoverTool(tooltips=[("Time", "@display_time"), ("Data", "@data")])
 	x_range = None
 	default_width  = 650
-	default_height = 200
+	default_height = 180
 	default_line_width = 2
 	default_muted_alpha = 0.2
 
-	def __init__(self, metrics, line_colors, line_dashes=None):
+	def __init__(self, metrics, queries, requests, line_colors, line_dashes=None):
 		self.metrics = metrics
+		self.queries = queries
+		self.requests = requests
 		self.line_colors = line_colors
 		self.line_dashes = line_dashes
 		self.data_sources = {}
@@ -49,112 +51,128 @@ class TimeSeriesPlot(object):
 		self.p = p
 		return p
 
-	def update_plot(self, time, display_time, updated_data):
+	def update_plot_(self, time, display_time, updated_data):
 		for metric in self.metrics:
 			if metric in updated_data and updated_data[metric] is not None:
 				data = [float(updated_data[metric])]
 				self.data_sources[metric].stream(dict(time=time, display_time=display_time, data=data))
 
+	def get_data(self, data, query):
+		keys = query.split('#')
+		# print('\tquery={}, keys={}'.format(query, keys))
+		for key in keys:
+			if key not in data:
+				return None
+			# print('\tkey={}, data[key]={}'.format(key, data[key]))
+			if type(data[key]) != dict:
+				break
+			else:
+				data = data[key]
+		return data[key]
+
+	def get_requests(self):
+		return self.requests
+
+	def update_plot(self, time, display_time, updated_data):
+		data = {}
+		for metric in self.metrics:
+			val = self.get_data(updated_data, self.queries[metric])
+			if val is not None:
+				self.data_sources[metric].stream(dict(time=time, display_time=display_time, data=[val]))
+
 
 class MsgsPlot(TimeSeriesPlot):
-	sources = ['msgsin', 'msgsout']
-	display_metrics = {'msgsin': ['msgsin', 'msgsin_1min'], 'msgsout': ['msgsout', 'msgsout_1min']}
+	metrics = ['msgsin', 'msgsin_1min', 'msgsout', 'msgsout_1min']
+	queries = {'msgsin': 'msgsin#msgsin', 'msgsin_1min': 'msgsin#msgsin_1min', 
+			   'msgsout': 'msgsout#msgsout', 'msgsout_1min': 'msgsout#msgsout_1min'}
+	requests = ['msgsin', 'msgsout']
 	line_colors = {'msgsin': 'mediumaquamarine', 'msgsin_1min': 'mediumseagreen',
 				   'msgsout': 'lightskyblue', 'msgsout_1min': 'dodgerblue', 'delta': 'palevioletred'}
 	line_dashes = {'msgsin': 'solid', 'msgsin_1min': 'dashed',
 				   'msgsout': 'solid', 'msgsout_1min': 'dashed', 'delta': 'solid'}
 
 	def __init__(self):
-		super(MsgsPlot, self).__init__(self.display_metrics['msgsin'] + self.display_metrics['msgsout'],
+		super(MsgsPlot, self).__init__(self.metrics, self.queries, self.requests,
 									   self.line_colors, self.line_dashes)
 
 	def create_plot(self):
 		return super(MsgsPlot, self).create_plot('MessagesIn/MessagesOut',
 												  yaxis_label='Messages per Second')
 
-	def update_plot(self, time, display_time, updated_data):
-		data = {}
-		for source in self.sources:
-			for metric in self.display_metrics[source]:
-				if updated_data[source] is not None:
-					data[metric] = updated_data[source][metric]
-		super(MsgsPlot, self).update_plot(time, display_time, data)
-
 
 class BytesPlot(TimeSeriesPlot):
-	metrics = ['bytesout', 'bytesin', 'bytesout_1minavg', 'bytesin_1minavg']
-	line_colors = {'bytesout': 'dodgerblue', 'bytesin': 'mediumseagreen', 'bytesout_1minavg': 'lightskyblue', 'bytesin_1minavg': 'mediumaquamarine'}
-	line_dashes = {'bytesout': 'solid', 'bytesin': 'solid', 'bytesout_1minavg': 'dashed', 'bytesin_1minavg': 'dashed'}
+	metrics = ['bytesout', 'bytesin', 'bytesout_1min', 'bytesin_1min']
+	queries = {'bytesout': 'bytesout', 'bytesin': 'bytesin', \
+			   'bytesout_1min': 'jmx#bytesout_1min', 'bytesin_1min': 'jmx#bytesin_1min'}
+	requests = ['bytesout', 'bytesin', 'jmx']
+	line_colors = {'bytesout': 'dodgerblue', 'bytesin': 'mediumseagreen', 'bytesout_1min': 'lightskyblue', 'bytesin_1min': 'mediumaquamarine'}
+	line_dashes = {'bytesout': 'solid', 'bytesin': 'solid', 'bytesout_1min': 'dashed', 'bytesin_1min': 'dashed'}
 
 	def __init__(self):
-		super(BytesPlot, self).__init__(self.metrics, self.line_colors, self.line_dashes)
+		super(BytesPlot, self).__init__(self.metrics, self.queries, self.requests,
+										self.line_colors, self.line_dashes)
 
 	def create_plot(self):
-		return super(BytesPlot, self).create_plot('BytesInPerSec/BytesOutPerSec',
+		return super(BytesPlot, self).create_plot('BytesIn/BytesOut',
 												  yaxis_label='Data Rate [Kbytes/sec]')
 
 	def update_plot(self, time, display_time, updated_data):
+		data = {}
 		for metric in self.metrics:
-			if updated_data[metric] is not None:
-				data = [float(updated_data[metric]) / 1024] # bytes/s -> Kbytes/s
-				self.data_sources[metric].stream(dict(time=time, display_time=display_time, data=data))
+			val = self.get_data(updated_data, self.queries[metric])
+			if val is not None:
+				val = float(val) / 1024 # bytes/s -> Kbytes/s
+				self.data_sources[metric].stream(dict(time=time, display_time=display_time, data=[val]))
 
 
 class LagsPlot(TimeSeriesPlot):
-	source = 'lags'
-	display_metrics = ['max', 'min', 'mean']
+	metrics = ['max', 'min', 'mean']
+	queries = {'max': 'lags#max', 'min': 'lags#min', 'mean': 'lags#mean'}
+	requests = ['lags']
 	line_colors = {'max': 'plum', 'min': 'palegoldenrod', 'mean': 'lightcoral'}
 
 	def __init__(self):
-		super(LagsPlot, self).__init__(self.display_metrics, self.line_colors)
+		super(LagsPlot, self).__init__(self.metrics, self.queries, self.requests, self.line_colors)
 
 	def create_plot(self):
 		return super(LagsPlot, self).create_plot('Offset Lags',
 												 yaxis_label='Offset Lags')
 
-	def update_plot(self, time, display_time, updated_data):
-		if updated_data[self.source] is None or updated_data[self.source] == {}:
-			return
-		data = {}
-		for metric in self.display_metrics:
-			data[metric] = updated_data[self.source][metric]
-		super(LagsPlot, self).update_plot(time, display_time, data)
-
 
 class VmPlot(TimeSeriesPlot):
-	display_metrics = ['vm']
+	metrics = ['vm']
+	queries = {'vm': 'vm'}
+	requests = ['vm']
 	line_colors = {'vm': 'lightseagreen'}
 
 	def __init__(self):
-		super(VmPlot, self).__init__(self.display_metrics, self.line_colors)
+		super(VmPlot, self).__init__(self.metrics, self.queries, self.requests, self.line_colors)
 
 	def create_plot(self):
 		return super(VmPlot, self).create_plot('Number of VMs', height=180,
 											   yaxis_label='Number of VMs')
 
 
-
 class MsgsizePlot(TimeSeriesPlot):
-	source = 'jmx'
-	display_metrics = ['msgsize']
+	metrics = ['msgsize']
+	queries = {'bytesin': 'jmx#bytesin_1min', 'msgsin': 'jmx#msgsin_1min'}
+	requests = ['jmx']
 	line_colors = {'msgsize': 'skyblue'}
 
 	def __init__(self):
-		super(MsgsizePlot, self).__init__(self.display_metrics, self.line_colors)
+		super(MsgsizePlot, self).__init__(self.metrics, self.queries, self.requests, self.line_colors)
 
 	def create_plot(self):
-		return super(MsgsizePlot, self).create_plot('Average Message Size', height=180,
-													yaxis_label='Average Message Size [bytes]')
+		return super(MsgsizePlot, self).create_plot('Message Size', height=180,
+													yaxis_label='Message Size [bytes]')
 
 	def update_plot(self, time, display_time, updated_data):
-		if updated_data[self.source] is None or updated_data[self.source] == {}:
-			return
+		bytesin = super(MsgsizePlot, self).get_data(updated_data, self.queries['bytesin'])
+		msgsin = super(MsgsizePlot, self).get_data(updated_data, self.queries['msgsin'])
 
-		if 0.0 < updated_data[self.source]['msgsin_1min']:
-			data = {'msgsize': 
-					updated_data[self.source]['bytesin_1min'] / updated_data[self.source]['msgsin_1min']}
-		else:
-			data = {'msgsize': 0.0}
-		super(MsgsizePlot, self).update_plot(time, display_time, data)
+		metric = self.metrics[0]
+		if 0.0 < msgsin and 0.0 <= bytesin:
+			val = bytesin / msgsin
+			self.data_sources[metric].stream(dict(time=time, display_time=display_time, data=[val]))
 
 
