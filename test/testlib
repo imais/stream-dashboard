@@ -12,11 +12,10 @@ vCPUS_PER_VM=2          # Amazon EC2's m4.large
 TASKS_PER_vCPU=2        # Assign this #tasks per vCPU
 NUM_PU=3                # PU: Processing Unit
 
-
 function get_date { date "+%Y-%m-%d %H:%M:%S"; }
 function dbg_print { echo "`get_date`" $1; }
 function run_cmd { 
-    dbg_print "$1"
+    dbg_print "Running: $1"
     eval $1
 }
 function max {
@@ -29,8 +28,8 @@ function max {
     IFS=${IFSbak}
 }
 function sleep_sec {
-    dbg_print "Sleeping $1 seconds..."
-    sleep $1
+    dbg_print "Waiting $1 seconds..."
+    run_cmd "sleep $1"
 }
 
 function get_parallel {
@@ -62,9 +61,14 @@ function run_supervisors {
 }
 
 function kill_supervisors {
+    if [ ! -f ./supervisors ] ; then
+        dbg_print 'kill_suervisors: supervisor file does not exist'
+        exit 1
+    fi
     local m=`cat ./supervisors`
     dbg_print "Killing $m supervisors..."
     run_cmd "pdsh -R ssh -l ${REMOTE_USER} -w slave[001-$m] 'pkill java'"
+    rm ./supervisors
 }
 
 function run_topo {
@@ -81,13 +85,13 @@ function run_topo {
 }
 
 function kill_topo {
-    if [ -f ./topo ] ; then
-        dbg_print "Killing ${TOPO}..."
-        run_cmd "storm kill -w 0 ${TOPO} || true"
-	rm ./topo
-    else
-        dbg_print "kill_topo: topology does not exist yet"
+    if [ ! -f ./topo ] ; then
+        dbg_print "kill_topo: topology does not exist"
+        exit 1
     fi
+    dbg_print "Killing ${TOPO}..."
+    run_cmd "storm kill -w 0 ${TOPO} || true"
+	rm ./topo
 }    
 
 function notify_server {
