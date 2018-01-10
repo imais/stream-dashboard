@@ -82,7 +82,7 @@ class TimeSeriesPlot(object):
 
 
 class MsgsPlot(TimeSeriesPlot):
-	metrics = ['msgsin', 'msgsin_1min', 'msgsout', 'msgsout_1min']
+	metrics = ['msgsin', 'msgsout', 'msgsin_1min', 'msgsout_1min']
 	queries = {'msgsin': 'msgsin#msgsin', 'msgsin_1min': 'msgsin#msgsin_1min', 
 			   'msgsout': 'msgsout#msgsout', 'msgsout_1min': 'msgsout#msgsout_1min'}
 	requests = ['msgsin', 'msgsout']
