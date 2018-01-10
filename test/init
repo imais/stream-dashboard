@@ -1,5 +1,20 @@
+#!/bin/bash
+
 source ./testlib
-rm ./topo
-kill_supervisors
-sleep_sec 20
+
+if [ -f ./topo ] ; then
+    kill_topo
+    sleep_sec 20
+fi
+
+if [ -f ./supervisors ] ; then
+    kill_supervisors
+    sleep_sec 20
+fi
+
+notify_server 1
 run_supervisors 1
+sleep_sec 20
+
+run_topo 1
+

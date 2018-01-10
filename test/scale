@@ -11,28 +11,28 @@ fi
 
 op=$1
 
-function sleep_sec {
-    dbg_print "Sleeping $1 seconds..."
-    sleep $1
-}
-
 kill_topo
 sleep_sec ${SLEEP_SEC}
+
+m=`cat ./supervisors`
 
 kill_supervisors
 sleep_sec ${SLEEP_SEC}
 
-m=`cat ./supervisors`
+m=`echo $m | sed 's/^0*//'`
 if [ $op == 'up' ] ; then
     # scale up
-    m=$((m + 1))
+    new_m=$((m + 1))
+    dbg_print "Scaling up: $m -> ${new_m}"
 else
     # scale down
-    m=`max "$((m - 1)) 0"`
+    new_m=`max "$((m - 1)) 0"`
+    dbg_print "Scaling down: $m -> ${new_m}"
 fi
+m=${new_m}
 
+notify_server $m
 run_supervisors $m
 sleep_sec ${SLEEP_SEC}
 
 run_topo $m
-notify_server $m
