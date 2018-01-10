@@ -8,8 +8,8 @@ class TimeSeriesPlot(object):
 	tools = 'pan, xbox_zoom, save, reset'
 	hover = HoverTool(tooltips=[("Time", "@display_time"), ("Data", "@data")])
 	x_range = None
-	default_width  = 650
-	default_height = 180
+	default_width  = 460
+	default_height = 240
 	default_line_width = 2
 	default_muted_alpha = 0.2
 
@@ -40,12 +40,13 @@ class TimeSeriesPlot(object):
 				r = p.line(source=self.data_sources[metric], x='time', y='data', color=self.line_colors[metric], line_width=self.default_line_width, muted_color=self.line_colors[metric], muted_alpha=self.default_muted_alpha)
 			if 1 < len(self.metrics):
 				legend_items.append((metric, [r]))
-		legend = Legend(items=legend_items, click_policy='mute')
+		legend = Legend(items=legend_items, click_policy='mute', orientation='horizontal', 
+						location='top_center', border_line_color=None)
 			
 		p.y_range.start = 0
 		p.xaxis.axis_label = xaxis_label
 		p.yaxis.axis_label = yaxis_label
-		p.add_layout(legend, 'right')
+		p.add_layout(legend, 'below')
 		p.add_tools(self.hover)
 
 		self.p = p
@@ -150,8 +151,7 @@ class VmPlot(TimeSeriesPlot):
 		super(VmPlot, self).__init__(self.metrics, self.queries, self.requests, self.line_colors)
 
 	def create_plot(self):
-		return super(VmPlot, self).create_plot('Number of VMs', height=180,
-											   yaxis_label='Number of VMs')
+		return super(VmPlot, self).create_plot('Number of VMs', yaxis_label='Number of VMs')
 
 
 class MsgsizePlot(TimeSeriesPlot):
@@ -164,8 +164,7 @@ class MsgsizePlot(TimeSeriesPlot):
 		super(MsgsizePlot, self).__init__(self.metrics, self.queries, self.requests, self.line_colors)
 
 	def create_plot(self):
-		return super(MsgsizePlot, self).create_plot('Message Size', height=180,
-													yaxis_label='Message Size [bytes]')
+		return super(MsgsizePlot, self).create_plot('Message Size', yaxis_label='Message Size [bytes]')
 
 	def update_plot(self, time, display_time, updated_data):
 		bytesin = super(MsgsizePlot, self).get_data(updated_data, self.queries['bytesin'])
