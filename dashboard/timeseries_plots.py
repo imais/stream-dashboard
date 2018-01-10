@@ -86,7 +86,7 @@ class MsgsPlot(TimeSeriesPlot):
 	queries = {'msgsin': 'msgsin#msgsin', 'msgsin_1min': 'msgsin#msgsin_1min', 
 			   'msgsout': 'msgsout#msgsout', 'msgsout_1min': 'msgsout#msgsout_1min'}
 	requests = ['msgsin', 'msgsout']
-	line_colors = {'msgsin': 'mediumaquamarine', 'msgsin_1min': 'mediumseagreen',
+	line_colors = {'msgsin': 'mediumaquamarine', 'msgsin_1min': 'forestgreen',
 				   'msgsout': 'lightskyblue', 'msgsout_1min': 'dodgerblue', 'delta': 'palevioletred'}
 	line_dashes = {'msgsin': 'solid', 'msgsin_1min': 'dashed',
 				   'msgsout': 'solid', 'msgsout_1min': 'dashed', 'delta': 'solid'}
@@ -101,11 +101,12 @@ class MsgsPlot(TimeSeriesPlot):
 
 
 class BytesPlot(TimeSeriesPlot):
-	metrics = ['bytesout', 'bytesin', 'bytesout_1min', 'bytesin_1min']
+	metrics = ['bytesin', 'bytesout', 'bytesin_1min', 'bytesout_1min']
 	queries = {'bytesout': 'bytesout', 'bytesin': 'bytesin', \
 			   'bytesout_1min': 'jmx#bytesout_1min', 'bytesin_1min': 'jmx#bytesin_1min'}
 	requests = ['bytesout', 'bytesin', 'jmx']
-	line_colors = {'bytesout': 'dodgerblue', 'bytesin': 'mediumseagreen', 'bytesout_1min': 'lightskyblue', 'bytesin_1min': 'mediumaquamarine'}
+	line_colors = {'bytesin': 'mediumaquamarine', 'bytesout': 'lightskyblue', 
+				   'bytesout_1min': 'dodgerblue', 'bytesin_1min': 'forestgreen'}
 	line_dashes = {'bytesout': 'solid', 'bytesin': 'solid', 'bytesout_1min': 'dashed', 'bytesin_1min': 'dashed'}
 
 	def __init__(self):
