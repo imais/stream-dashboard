@@ -2,6 +2,7 @@ import json
 import socket 
 import threading
 from threading import Thread, Lock 
+from derived_values import MsgsIn, MsgsOut, OffsetLags
 
 # Constants
 TCP_IP = '0.0.0.0' 
@@ -12,6 +13,8 @@ BUFFER_SIZE = 8192
 val_store = {}
 store_lock = Lock()
 threads = [] 
+derived_values = {'offsets': [MsgsIn(), MsgsOut(), OffsetLags()]}
+
 
 class ClientThread(Thread): 
 	def __init__(self, ip, port, conn): 
@@ -58,11 +61,19 @@ class ClientThread(Thread):
 					json_data = json.loads(req[4:])
 					args = json_data['args']
 					for var in args:
-						self.set_val(var, args[var])
+						new_vars = []
+						if derived_values.has_key(var):
+							for derived_value in derived_values[var]:
+								(new_var, new_val) = derived_value.compute(args[var])
+								self.set_val(new_var, new_val)
+								self.dbg_print('Derived: {}: {}'.format(new_var, new_val))
+								new_vars = new_vars + [new_var]
+						if var not in new_vars:
+							self.set_val(var, args[var])
 					resp = 'ok'
-				except ValueError, KeyError:
+				except Exception as ex:
+					self.dbg_print('{}, received command: {}'.format(ex, req))
 					resp = 'error'
-					self.dbg_print('Illegal set command: {}'.format(req))
 				self.dbg_print('Response: ' + resp)
 				self.conn.send(resp)
 			elif req.startswith('get'):
@@ -72,9 +83,8 @@ class ClientThread(Thread):
 					vars = json_data['args']
 					vals = self.get_val(vars)
 					resp = 'error' if vals == 'None' else 'ok ' + json.dumps(vals)
-				except ValueError, KeyError:
-					resp = 'error'
-					self.dbg_print('Illegal set command: {}'.format(req))
+				except Exception as ex:
+					self.dbg_print('{}, received command: {}'.format(ex, req))
 				self.dbg_print('Response: ' + resp)
 				self.conn.send(resp)
 			else:
