@@ -29,7 +29,7 @@ class KafkaClient(object):
 	def close(self):
 		self.client.close()
 
-	def get_tail_offsets(self):
+	def get_latest_offsets(self):
 		request = [OffsetRequestPayload(self.topic, p, -1, 1) for p in self.partitions.keys()]
 		response = self.client.send_offset_request(request)	
 		offsets = {r.partition: r.offsets[0] for r in response} # build dictionary
@@ -64,14 +64,16 @@ class ZkClient(object):
 
 def run_monitor(kafka, zk, interval_sec):
 	while True:
-		tail_offsets = kafka.get_tail_offsets()
+		latest_offsets = kafka.get_latest_offsets()
 		commited_offsets = zk.get_commited_offsets()
 		partitions = {}
 		for p in kafka.partitions.keys():
 			if p in commited_offsets:
-				partitions['partition_' + str(p)] = {'tail': tail_offsets[p], 
+				# could not get timestamp from kafka -> use reeceived timestamp at monitor
+				partitions['partition_' + str(p)] = {'latest': latest_offsets[p], 
 													 'commited': commited_offsets[p],
-													 'lag': tail_offsets[p] - commited_offsets[p]}
+													 'lag': latest_offsets[p] - commited_offsets[p],
+													 'timestamp': time.time()}
 		offsets = {'offsets': partitions}
 		print(json.dumps(offsets))
 		time.sleep(interval_sec)

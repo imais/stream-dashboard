@@ -13,7 +13,7 @@ BUFFER_SIZE = 8192
 val_store = {}
 store_lock = Lock()
 threads = [] 
-derived_values = {'offsets': [MsgsIn(), MsgsOut(), OffsetLags()]}
+derived_values = {'offsets': [MsgsIn(), MsgsOut(), OffsetLags(), WaitTime()]}
 
 
 class ClientThread(Thread): 
