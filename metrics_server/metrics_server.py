@@ -2,7 +2,7 @@ import json
 import socket 
 import threading
 from threading import Thread, Lock 
-from derived_values import MsgsIn, MsgsOut, OffsetLags
+from derived_values import MsgsIn, MsgsOut, OffsetLags, WaitTime
 
 # Constants
 TCP_IP = '0.0.0.0' 

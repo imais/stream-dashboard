@@ -52,12 +52,6 @@ class TimeSeriesPlot(object):
 		self.p = p
 		return p
 
-	def update_plot_(self, time, display_time, updated_data):
-		for metric in self.metrics:
-			if metric in updated_data and updated_data[metric] is not None:
-				data = [float(updated_data[metric])]
-				self.data_sources[metric].stream(dict(time=time, display_time=display_time, data=data))
-
 	def get_data(self, data, query):
 		keys = query.split('#')
 		# print('\tquery={}, keys={}'.format(query, keys))
@@ -75,11 +69,13 @@ class TimeSeriesPlot(object):
 		return self.requests
 
 	def update_plot(self, time, display_time, updated_data):
-		data = {}
+		data = []
 		for metric in self.metrics:
 			val = self.get_data(updated_data, self.queries[metric])
 			if val is not None:
 				self.data_sources[metric].stream(dict(time=time, display_time=display_time, data=[val]))
+			data.append(val)
+		return data
 
 
 class MsgsPlot(TimeSeriesPlot):
@@ -119,12 +115,14 @@ class BytesPlot(TimeSeriesPlot):
 												  yaxis_label='Data Rate [Kbytes/sec]')
 
 	def update_plot(self, time, display_time, updated_data):
-		data = {}
+		data = []
 		for metric in self.metrics:
 			val = self.get_data(updated_data, self.queries[metric])
 			if val is not None:
 				val = float(val) / 1024 # bytes/s -> Kbytes/s
 				self.data_sources[metric].stream(dict(time=time, display_time=display_time, data=[val]))
+			data.append(val)
+		return data
 
 
 class LagsPlot(TimeSeriesPlot):
@@ -171,8 +169,20 @@ class MsgsizePlot(TimeSeriesPlot):
 		msgsin = super(MsgsizePlot, self).get_data(updated_data, self.queries['msgsin'])
 
 		metric = self.metrics[0]
-		if 0.0 < msgsin and 0.0 <= bytesin:
+		val = None
+		if 0.0 < msgsin:
 			val = bytesin / msgsin
 			self.data_sources[metric].stream(dict(time=time, display_time=display_time, data=[val]))
+		return [val]
 
+class WaitTimePlot(TimeSeriesPlot):
+	metrics = ['wait_time']
+	queries = {'wait_time': 'wait_time'}
+	requests = ['wait_time']
+	line_colors = {'wait_time': 'mediumslateblue'}
 
+	def __init__(self):
+		super(WaitTimePlot, self).__init__(self.metrics, self.queries, self.requests, self.line_colors)
+
+	def create_plot(self):
+		return super(WaitTimePlot, self).create_plot('Wait Time in Kafka', yaxis_label='Wait Time [sec]')

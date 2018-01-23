@@ -46,7 +46,7 @@ class ZkClient(object):
 	def close(self):
 		self.client.stop()
 
-	def get_commited_offsets(self):
+	def get_committed_offsets(self):
 		zk_path = '/' + self.topic + '/' + self.group_id
 		offsets = {}
 		for p in self.partitions.keys():
@@ -65,14 +65,14 @@ class ZkClient(object):
 def run_monitor(kafka, zk, interval_sec):
 	while True:
 		latest_offsets = kafka.get_latest_offsets()
-		commited_offsets = zk.get_commited_offsets()
+		committed_offsets = zk.get_committed_offsets()
 		partitions = {}
 		for p in kafka.partitions.keys():
-			if p in commited_offsets:
+			if p in committed_offsets:
 				# could not get timestamp from kafka -> use reeceived timestamp at monitor
 				partitions['partition_' + str(p)] = {'latest': latest_offsets[p], 
-													 'commited': commited_offsets[p],
-													 'lag': latest_offsets[p] - commited_offsets[p],
+													 'committed': committed_offsets[p],
+													 'lag': latest_offsets[p] - committed_offsets[p],
 													 'timestamp': time.time()}
 		offsets = {'offsets': partitions}
 		print(json.dumps(offsets))
