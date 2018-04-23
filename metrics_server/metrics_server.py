@@ -1,20 +1,30 @@
 import json
+import signal
 import socket 
+import sys
 import threading
 from threading import Thread, Lock 
-from derived_values import MsgsIn, MsgsOut, OffsetLags
+from derived_values import MsgsIn, MsgsOut, OffsetLags, WaitTime
 
 # Constants
 TCP_IP = '0.0.0.0' 
 TCP_PORT = 9999
 BUFFER_SIZE = 8192
+LOG_FILE = './log.txt'
 
 # Global variables
 val_store = {}
 store_lock = Lock()
+log_lock = Lock()
 threads = [] 
-derived_values = {'offsets': [MsgsIn(), MsgsOut(), OffsetLags()]}
+derived_values = {'offsets': [MsgsIn(), MsgsOut(), OffsetLags(), WaitTime()]}
 
+def signal_handler(signal, frame):
+	print('\nCaught Ctrl-C signal!!')
+	if not f.closed:
+		print('Closing {}...'.format(LOG_FILE))
+		f.close()
+	sys.exit(0)
 
 class ClientThread(Thread): 
 	def __init__(self, ip, port, conn): 
@@ -41,6 +51,13 @@ class ClientThread(Thread):
 			vals[var] = val_store[var] if var in val_store else None
 		return vals
 
+	def write_log(self, data):
+		log_lock.acquire()
+		try:
+			f.write(data)
+		finally:
+			log_lock.release()
+
 	def run(self): 
 		self.dbg_print('[+] New server socket thread started for {}:{}'.format(ip, port))
 
@@ -57,6 +74,7 @@ class ClientThread(Thread):
 				break
 			elif req.startswith('set'):
 				# format: set {'args': {var1: val1, var2: val2, ...}}
+				self.write_log(req + '\n')
 				try:
 					json_data = json.loads(req[4:])
 					args = json_data['args']
@@ -92,13 +110,18 @@ class ClientThread(Thread):
 				
 		self.dbg_print('[-] Terminating thread for {}:{}'.format(self.ip, self.port))
 
+signal.signal(signal.SIGINT, signal_handler)
+
+print('Opening {}'.format(LOG_FILE))
+f = open(LOG_FILE, 'w')
+
 server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) 
 server_sock.bind((TCP_IP, TCP_PORT)) 
 
 while True: 
 	server_sock.listen(4)		# number of backlogged clients
-	print "Data server listening on port {}".format(TCP_PORT)
+	print('Data server listening on port {}'.format(TCP_PORT))
 	(conn, (ip, port)) = server_sock.accept() 
 	thread = ClientThread(ip, port, conn) 
 	thread.start() 

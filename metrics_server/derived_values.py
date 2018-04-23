@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 from datetime import datetime
 
 
@@ -58,12 +59,12 @@ class PartitionsDerivedValue(OneMinuteRate):
 
 class MsgsIn(PartitionsDerivedValue):
 	def __init__(self):
-		super(MsgsIn, self).__init__('msgsin', 'tail')
+		super(MsgsIn, self).__init__('msgsin', 'latest')
 
 
 class MsgsOut(PartitionsDerivedValue):
 	def __init__(self):
-		super(MsgsOut, self).__init__('msgsout', 'commited')
+		super(MsgsOut, self).__init__('msgsout', 'committed')
 
 
 class OffsetLags(object):
@@ -75,3 +76,96 @@ class OffsetLags(object):
 		stats = {'max': max(lags), 'min': min(lags), 'mean': np.mean(lags), 'num': len(partitions)}
 
 		return ('lags', stats)
+
+
+class WaitTime(object):
+	_latest = {}
+	_committed = {}
+
+	def compute(self, partitions):
+		delta_timestamps = np.array([])
+
+		latest = self._latest
+		committed = self._committed
+
+		for p in partitions:
+			latest_offset = partitions[p]['latest']
+			committed_offset = partitions[p]['committed']
+			timestamp = partitions[p]['timestamp']
+
+			# init latest & committed
+			if not latest.has_key(p):
+				latest[p] = {'offset': np.array([]), 'timestamp': np.array([])}
+			if not committed.has_key(p):
+				committed[p] = {'offset': np.array([]), 'timestamp': np.array([])}
+
+			if (latest_offset is not None) and (timestamp is not None):
+				latest[p]['offset'] = np.append(latest[p]['offset'], latest_offset)
+				latest[p]['timestamp'] = np.append(latest[p]['timestamp'], timestamp)
+			if (committed_offset is not None) and (timestamp is not None):
+				committed[p]['offset'] = np.append(committed[p]['offset'], committed_offset)
+				committed[p]['timestamp'] = np.append(committed[p]['timestamp'], timestamp)
+
+			if len(latest[p]['offset']) <= 1 or len(committed[p]['offset']) <= 1:
+				continue
+
+			# there are at least more than 1 elements both in latest and committed
+			latest_offset_range = np.arange(latest[p]['offset'][-2], latest[p]['offset'][-1] + 1)
+			# print('latest[p][offset][-1]={}, latest[p][offset][-2]={}'.format(latest[p]['offset'][-1], latest[p]['offset'][-2]))
+			latest_interp = np.interp(latest_offset_range,
+									  [latest[p]['offset'][-2], latest[p]['offset'][-1]],
+									  [latest[p]['timestamp'][-2], latest[p]['timestamp'][-1]])
+			latest[p]['offset'] = np.append(latest[p]['offset'][:-2], latest_offset_range)
+			latest[p]['timestamp'] = np.append(latest[p]['timestamp'][:-2], latest_interp)
+
+			committed_offset_range = np.arange(committed[p]['offset'][-2], committed_offset + 1)
+			committed_interp = np.interp(committed_offset_range,
+										 [committed[p]['offset'][-2], committed_offset],
+										 [committed[p]['timestamp'][-2], timestamp])
+			committed[p]['offset'] = np.append(committed[p]['offset'][:-2], committed_offset_range)
+			committed[p]['timestamp'] = np.append(committed[p]['timestamp'][:-2], committed_interp)
+
+			# find common offsets from committed and latest
+			min_committed = committed[p]['offset'][0]
+			max_committed = committed[p]['offset'][-1]
+			common_offsets = latest[p]['offset'][(min_committed <= latest[p]['offset']) & (latest[p]['offset'] <= max_committed)]
+			# print('### Before uptates')
+			# print('### latest[p][offset]={}'.format(latest[p]['offset']))
+			# print('### committed[p][offset]={}'.format(committed[p]['offset']))
+			# print('### common_offsets={}'.format(common_offsets))
+
+			latest_timestamps = latest[p]['timestamp'][(common_offsets[0] <= latest[p]['offset']) & (latest[p]['offset'] <= common_offsets[-1])]
+			committed_timestamps = committed[p]['timestamp'][(common_offsets[0] <= committed[p]['offset']) & (committed[p]['offset'] <= common_offsets[-1])]
+			delta = [(committed_timestamps[i] - latest_timestamps[i]) for i in range(0, len(committed_timestamps))]
+			delta_timestamps = np.append(delta_timestamps, delta)
+			# print('### delta_timestamps={}'.format(delta_timestamps))
+			
+			# remove processed offsets info
+			filter = common_offsets[-1] <= latest[p]['offset']
+			latest[p]['offset'] = latest[p]['offset'][filter]
+			latest[p]['timestamp'] = latest[p]['timestamp'][filter]
+			filter = common_offsets[-1] <= committed[p]['offset']
+			committed[p]['offset'] = committed[p]['offset'][filter]
+			committed[p]['timestamp'] = committed[p]['timestamp'][filter]
+
+			# print('### After updates')
+			# print('### latest[p][offset]={}'.format(latest[p]['offset']))
+			# print('### committed[p][offset]={}'.format(committed[p]['offset']))
+
+		return ('wait_time', np.mean(delta_timestamps) if 0 < len(delta_timestamps) else None)
+
+			
+
+				
+						   
+
+				
+				
+				
+				
+											
+			
+		
+		
+	
+	
