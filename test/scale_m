@@ -1,0 +1,37 @@
+#!/bin/bash
+
+source ./testlib
+KILL_SUPERVISORS_SLEEP_SEC=3
+RUN_SUPERVISORS_SLEEP_SEC=20
+
+
+if [ $# -eq 0 ] ; then
+    echo "Usage: ./scale [#VMs]"
+    exit 1
+fi
+
+m_next=$1
+m_curr=`cat ./supervisors`
+m_curr=`echo ${m_curr} | sed 's/^0*//'`
+
+if [ ${m_next} -eq ${m_curr} ] ; then
+    dbg_print "No need for scaling: ${m_curr} -> ${m_next}"
+    exit
+fi    
+
+dbg_print "Scaling: ${m_curr} -> ${m_next}"
+
+# Kill topology
+kill_topo
+
+# Kill supervisors
+kill_supervisors
+sleep_sec ${KILL_SUPERVISORS_SLEEP_SEC}
+
+# Restart supervisors and notify metrics server
+run_supervisors ${m_next}
+sleep_sec ${RUN_SUPERVISORS_SLEEP_SEC}
+notify_server ${m_next}
+
+# Restart topology
+run_topo ${m_next}

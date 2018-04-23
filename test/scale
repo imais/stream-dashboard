@@ -1,7 +1,8 @@
 #!/bin/bash
 
 source ./testlib
-SLEEP_SEC=20
+KILL_SUPERVISORS_SLEEP_SEC=3
+RUN_SUPERVISORS_SLEEP_SEC=20
 
 
 if [ $# -eq 0 ] || ( [ $1 != 'up' ] && [ $1 != 'down' ] ) ; then
@@ -12,12 +13,11 @@ fi
 op=$1
 
 kill_topo
-sleep_sec ${SLEEP_SEC}
 
 m=`cat ./supervisors`
 
 kill_supervisors
-sleep_sec ${SLEEP_SEC}
+sleep_sec ${KILL_SUPERVISORS_SLEEP_SEC}
 
 m=`echo $m | sed 's/^0*//'`
 if [ $op == 'up' ] ; then
@@ -33,6 +33,6 @@ m=${new_m}
 
 notify_server $m
 run_supervisors $m
-sleep_sec ${SLEEP_SEC}
+sleep_sec ${RUN_SUPERVISORS_SLEEP_SEC}
 
 run_topo $m
